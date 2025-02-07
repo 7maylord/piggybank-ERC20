@@ -1,32 +1,35 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+interface IERC20 {
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+}
 
 contract PiggyBank {
     // State variables
-    IERC20 public token;
     uint256 public targetAmount;
+    mapping(address => uint256) public contributions;
     uint256 public immutable withdrawalDate;
     uint8 public contributorsCount;
     address public manager;
-
-    //Mapping
-    mapping(address => uint256) public contributions;
+    IERC20 public token; // ERC-20 token address
 
     // Events
     event Contributed(address indexed contributor, uint256 amount, uint256 time);
     event Withdrawn(uint256 amount, uint256 time);
 
     // Constructor
-    constructor(address _token, uint256 _targetAmount, uint256 _withdrawalDate, address _manager) {
+    constructor(uint256 _targetAmount, uint256 _withdrawalDate, address _manager, address _token) {
         require(_withdrawalDate > block.timestamp, "WITHDRAWAL MUST BE IN FUTURE");
+        require(_manager != address(0), "INVALID SENDER ADDRESS");
         require(_token != address(0), "INVALID TOKEN ADDRESS");
-        
-        token = IERC20(_token);
+
         targetAmount = _targetAmount;
         withdrawalDate = _withdrawalDate;
         manager = _manager;
+        token = IERC20(_token);
     }
 
     modifier onlyManager() {
@@ -34,14 +37,16 @@ contract PiggyBank {
         _;
     }
 
-    // Save (Deposit tokens)
+    // Save (Deposit Tokens)
     function save(uint256 amount) external {
         require(msg.sender != address(0), "UNAUTHORIZED ADDRESS");
         require(block.timestamp <= withdrawalDate, "YOU CAN NO LONGER SAVE");
         require(amount > 0, "YOU ARE BROKE");
-        require(token.transferFrom(msg.sender, address(this), amount), "TRANSFER FAILED");
 
-        // Check if the caller is a first-time contributor
+        // Transfer tokens from sender to contract
+        require(token.transferFrom(msg.sender, address(this), amount), "TOKEN TRANSFER FAILED");
+
+        // First-time contributor check
         if (contributions[msg.sender] == 0) {
             contributorsCount += 1;
         }
@@ -51,12 +56,14 @@ contract PiggyBank {
     }
 
     // Withdrawal
-    function withdraw() external onlyManager {
+    function withdrawal() external onlyManager {
         require(block.timestamp >= withdrawalDate, "NOT YET TIME");
         require(token.balanceOf(address(this)) >= targetAmount, "TARGET AMOUNT NOT REACHED");
 
         uint256 contractBalance = token.balanceOf(address(this));
-        require(token.transfer(manager, contractBalance), "TRANSFER FAILED");
+
+        // Transfer tokens to manager
+        require(token.transfer(manager, contractBalance), "TOKEN TRANSFER FAILED");
 
         emit Withdrawn(contractBalance, block.timestamp);
     }
