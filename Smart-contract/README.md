@@ -33,9 +33,19 @@ npx hardhat test
 ## Deployment
 To deploy the contract, run:
 ```sh
-npx hardhat ignition deploy ignition/modules/PiggyBank.ts --network sepolia --verify
+npx hardhat ignition deploy ignition/modules/PiggyBank.ts --network <network-name> --verify
 ```
-Replace `<network-name>` with your desired network (e.g., `sepolia`, `localhost`).
+Replace `<network-name>` with your desired network (e.g., `lisk_sepolia`, `localhost`).
+
+## Contract Address : Lisk Sepolia
+   ```sh
+   0xaa9a8A94Dfcb8a07Cc5d2241eE17f8ed7Dc28df4
+   ```
+   
+## ERC20 Token Contract Address : Lisk Sepolia
+   ```sh
+   0x94080B43fA5Fc8C6Ffd3306c6D0541D80a870E98
+   ```
 
 ## Usage
 ### Saving Tokens
